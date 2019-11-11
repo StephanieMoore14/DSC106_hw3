@@ -1,3 +1,7 @@
+'use strict';
+
+const JSONFileName = 'assets/sample_data.json';
+
 let sharedConfig = {
   layout: "3x1",
   graphset : [
@@ -196,6 +200,7 @@ let pieConfig = {
   series: []
 };
 
+// global data-structure to hold the energy breakup
 var globalEnergyData = {
   keys: [],
   values: []
@@ -209,7 +214,6 @@ function updateGlobalEnergyData(data) {
     globalEnergyData['values'].push(energyBreakup);
   }
   globalEnergyData['keys'] = data.map(elm => elm['text']);
-  console.log(globalEnergyData);
 }
 
 // this method reacts only onmouseover on any of the nodes in the shared graphs
@@ -225,85 +229,98 @@ function onMouseoverChart(e) {
 
 // the nodeId is basically the x-axis value
 // the actual breakup is retrieved from the global data-structure
-
 function renderPieChart(nodeId) {
   var pieDataSet = globalEnergyData['keys'].map(function(elm, idx) {
     return {
-      text: elm.split('.')[elm.split('.').length - 2],
+      text: elm.split('.')[elm.split('.').length - 1],
       values: [globalEnergyData['values'][nodeId][idx]]
     }
   });
-  pieConfig['series'] = pieDataSet;
-}
-
-function fetchJSONFile(path, callback) {
-    var httpRequest = new XMLHttpRequest();
-    httpRequest.onreadystatechange = function() {
-        if (httpRequest.readyState === 4) {
-            if (httpRequest.status === 200 || httpRequest.status === 0) {
-                var data = JSON.parse(httpRequest.responseText);
-                console.log(data);
-                if (callback) callback(data);
-            }
-        }
-    };
-    httpRequest.open('GET', path);
-    httpRequest.send(); 
+  // console.log(pieDataSet);
+  zingchart.exec('pieGrid', 'setseriesdata', {
+    data : pieDataSet
+  });
 }
 
 // this function is responsible for plotting the energy on
 // successfully loading the JSON data
 // It also plots the pie chart for nodeId=0
 function onSuccessCb(jsonData) {
-  var energyData = jsonData.filter(function(elm) {
-      return elm['type'] === 'power';
-  }).map(function(elm) {
-      return {
-        values: elm['history']['data'],
-        text: elm['id']
-      };
-  });
-  updateGlobalEnergyData(energyData);
-
-  var priceData = jsonData.filter(function(elm) {
-      return elm['type'] === 'price';
-  }).map(function(elm) {
-      return {
-        values: elm['history']['data'],
-        text: elm['id']
-      };
-  });
-  var tempData = jsonData.filter(function(elm) {
-      return elm['type'] === 'temperature';
-  }).map(function(elm) {
-      return {
-        values: elm['history']['data'],
-        text: elm['id']
-      };
-  });
-  Highcharts.chart('sharedGrid', {
-    graphid: 0,
-    data : energyData
-  });
-  Highcharts.chart('sharedGrid', {
-    graphid: 1,
-    data : priceData
-  });
-  Highcharts.chart('sharedGrid', {
-    graphid: 2,
-    data : tempData
-  });
-  
-  Highcharts.chart('pieGrid', {
-    data: pieConfig
-  })
-  renderPieChart(0);
+    var energyData = jsonData.filter(function(elm) {
+        return elm['type'] === 'energy';
+    }).map(function(elm) {
+        return {
+          values: elm['data'],
+          text: elm['id']
+        };
+    });
+    updateGlobalEnergyData(energyData);
+    var priceData = jsonData.filter(function(elm) {
+        return elm['type'] === 'price';
+    }).map(function(elm) {
+        return {
+          values: elm['data'],
+          text: elm['id']
+        };
+    });
+    var tempData = jsonData.filter(function(elm) {
+        return elm['type'] === 'temperature';
+    }).map(function(elm) {
+        return {
+          values: elm['data'],
+          text: elm['id']
+        };
+    });
+    zingchart.exec('sharedGrid', 'setseriesdata', {
+      graphid: 0,
+      data : energyData
+    });
+    zingchart.exec('sharedGrid', 'setseriesdata', {
+      graphid: 1,
+      data : priceData
+    });
+    zingchart.exec('sharedGrid', 'setseriesdata', {
+      graphid: 2,
+      data : tempData
+    });
+    renderPieChart(0);
 }
 
+// Utility function to fetch any file from the server
+function fetchJSONFile(filePath, callbackFunc) {
+    console.debug("Fetching file:", filePath);
+    var httpRequest = new XMLHttpRequest();
+    httpRequest.onreadystatechange = function() {
+        if (httpRequest.readyState === 4) {
+            if (httpRequest.status === 200 || httpRequest.status === 0) {
+                console.info("Loaded file:", filePath);
+                var data = JSON.parse(httpRequest.responseText);
+                console.debug("Data parsed into valid JSON!");
+                console.debug(data);
+                if (callbackFunc) callbackFunc(data);
+            } else {
+                console.error("Error while fetching file", filePath, 
+                    "with error:", httpRequest.statusText);
+            }
+        }
+    };
+    httpRequest.open('GET', filePath);
+    httpRequest.send();
+}
+
+
+// The entrypoint of the script execution
 function doMain() {
-    fetchJSONFile('converted.js', onSuccessCb),
-    console.log("Document loaded!")
+    zingchart.render({
+        id: 'sharedGrid',
+        data: sharedConfig
+    });
+    zingchart.render({
+        id: 'pieGrid',
+        data: pieConfig 
+    });
+    zingchart.bind('sharedGrid', 'mouseover', onMouseoverChart);
+    fetchJSONFile('assets/sample_data.json', onSuccessCb);
+}
 
-};
-
-document.onload = doMain()
+document.onload = doMain();
