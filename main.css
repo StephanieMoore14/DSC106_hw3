@@ -1,5 +1,12 @@
 @charset "utf-8";
 /* CSS Document */
+
+body {
+    background: "#ece9e6";
+    color: "#333";
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', Times, serif;
+}
+
 .simpleTable {
     width: 90%;
     margin-left: 5%;
