@@ -5,14 +5,11 @@ function formatDate(date) {
         "August", "September", "Oct",
         "November", "December"
     ];
-
     var day = date.getDate();
-    var monthIndex = date.getMonth();
-    var hour = date.getHours();
-    var minute = date.getMinutes();
-
-
-    return day + ' ' + monthNames[monthIndex] + ' ' + hour + ':' + minute;
+    var monidx = date.getMonth();
+    var hr = date.getHours();
+    var min = date.getMinutes();
+    return day + ' ' + monthNames[monidx] + ' ' + hr + ':' + min;
 }
 
  var energyConfig = {
@@ -113,15 +110,14 @@ function formatDate(date) {
             }
         }
     },
-    
-    series: []
+    series: [] // dynamically add in later
 }
 
 var priceConfig = {
     // config for the price line graph
     chart: {
             type: 'line',
-            marginLeft: 40, // Keep all charts left aligned
+            marginLeft: 40,
             spacingTop: 20,
             spacingBottom: 20        
     },
@@ -139,9 +135,7 @@ var priceConfig = {
           color: 'red',
           zIndex: 3
         }],
-
         enabled: false
-
       },
     xAxis: {
         visible: false
@@ -176,7 +170,7 @@ var tempConfig = {
     // config for the temperature line graph
     chart: {
             type: "line",
-            marginLeft: 40, // Keep all charts left aligned
+            marginLeft: 40, 
             spacingTop: 20,
             spacingBottom: 20        
     },
@@ -194,7 +188,6 @@ var tempConfig = {
           color: 'red',
           zIndex: 3
         }],
-
         enabled: false
       },
     xAxis: {
@@ -360,20 +353,21 @@ function onSuccessCb(jsonData) {
     priceConfig.series = priceData;
     tempConfig.series = tempData;
 
-    var chartDiv1 = document.createElement('div');
-    chartDiv1.className = 'lgChart';
-    document.getElementById('sharedGrid').appendChild(chartDiv1);
-    Highcharts.chart(chartDiv1, energyConfig);
+    var configs = [energyConfig, priceConfig, tempConfig]
+    var genChart = document.createElement('div');
+    genChart.className = 'genChart';
+    document.getElementById('sharedGrid').appendChild(genChart);
+    Highcharts.chart(genChart, configs[0]);
 
-    var chartDiv2 = document.createElement('div');
-    chartDiv2.className = 'medChart';
-    document.getElementById('sharedGrid').appendChild(chartDiv2);
-    Highcharts.chart(chartDiv2, priceConfig);
+    var priceChart = document.createElement('div');
+    priceChart.className = 'priceChart';
+    document.getElementById('sharedGrid').appendChild(priceChart);
+    Highcharts.chart(priceChart, configs[1]);
 
-    var chartDiv3 = document.createElement('div');
-    chartDiv3.className = 'smChart';
-    document.getElementById('sharedGrid').appendChild(chartDiv3);
-    Highcharts.chart(chartDiv3, tempConfig);
+    var tempChart = document.createElement('div');
+    tempChart.className = 'tempChart';
+    document.getElementById('sharedGrid').appendChild(tempChart);
+    Highcharts.chart(tempChart, configs[2]);
 
     renderPieChart(0)
     
